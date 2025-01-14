@@ -1,0 +1,35 @@
+#version 330 core
+layout(location = 0) in vec3 in_vertex;
+layout(location = 1) in vec3 in_normal;
+layout(location = 2) in vec2 in_texCoord;
+
+uniform mat4 view_matrix;
+uniform mat4 projection_matrix;
+uniform mat4 model_matrix;
+
+out vec4 v_position;
+out vec4 v_color;
+out vec3 v_normal;
+out vec4 cam_pos;
+out vec2 v_texture;
+
+void main()
+{
+    // position for the fragment shader in camera space
+    v_position = view_matrix * model_matrix * vec4(in_vertex, 1.0);
+
+    // output vertex position
+    gl_Position = projection_matrix * view_matrix * model_matrix * vec4(in_vertex, 1.0);
+
+    // normal transform in camera coordinates
+    mat3 normMatrix = mat3(transpose(inverse(view_matrix * model_matrix)));
+    v_normal = normMatrix * normalize(in_normal);
+
+    v_color = vec4(0.3, 0.8, 0.7, 1.0);
+
+    // set light position
+    cam_pos = view_matrix * vec4(20, 4, -3, 1.0);
+
+    // pass texture coordinate
+    v_texture = in_texCoord;
+}

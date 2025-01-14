@@ -1,0 +1,41 @@
+#version 330 core
+// input fragment data
+in vec4 v_position;
+in vec4 v_color;
+in vec3 v_normal;
+in vec4 cam_pos;
+
+// output fragment color
+out vec4 f_color;
+void main()
+{
+    vec4 color = v_color;
+
+
+    // set light constants (could also be passed from main program to shader)
+    float ambient = 0.1;
+    float diffuse = 1.0;
+    float specular = 0.8;
+    float shininess = 90.0;
+
+    // light and view vectors, in camera coordinates
+    vec3 l = normalize(cam_pos.xyz - vec3(v_position));
+    vec3 v = normalize(-vec3(v_position));
+
+    // set ambient light contribution
+    f_color = ambient * color;
+
+    // add diffuse contribution
+    float diff = max(dot(v_normal, l), 0.0);
+    if (diff > 0.0) {
+        f_color += diffuse * diff * color;
+        // reflection vector
+        vec3 r = normalize(reflect(-l, v_normal));
+        // add specular contribution
+        float spec = max(dot(r, v), 0.0);
+        if (spec > 0.0)
+            f_color += specular * pow(spec, shininess) * color;
+    }
+
+
+}
