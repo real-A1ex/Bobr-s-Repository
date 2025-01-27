@@ -98,6 +98,7 @@ class Tree:
         self.x = x
         self.y = y
         self.age = random.randint(5, 10)
+        self.health = 10  # Trees now have health
 
     def grow(self):
         if self.age < 10 and random.random() < 0.1:
@@ -105,6 +106,12 @@ class Tree:
 
     def fell(self):
         return Item('wood')
+
+    def take_damage(self, damage):
+        self.health -= damage
+        if self.health <= 0:
+            return True  # Tree is destroyed
+        return False
 
     def draw(self):
         colors = [BROWN, BROWN, BROWN, BROWN, GREEN, GREEN] if self.age < 10 else [GREEN, GREEN, GREEN, GREEN, BROWN, BROWN]
@@ -121,6 +128,8 @@ class Bober:
         self.speed = speed
         self.inventory = []
         self.color = color if color else RED
+        self.teeth_level = 1  # Start with level 1 teeth
+        self.attack_damage = 2  # Damage per attack
 
     def move(self, dx, dy):
         new_x = self.x + dx * self.speed
@@ -147,6 +156,28 @@ class Bober:
                     self.inventory.remove(item)
                     removed += 1
             castle.improve()
+
+    def upgrade_teeth(self):
+        wood_count = sum(1 for item in self.inventory if item.name == 'wood')
+        if wood_count >= 10:
+            # Remove 10 wood from inventory
+            removed = 0
+            for item in self.inventory[:]:
+                if item.name == 'wood' and removed < 10:
+                    self.inventory.remove(item)
+                    removed += 1
+            # Increase teeth level
+            self.teeth_level += 1
+            self.attack_damage += 1  # Increase attack damage with teeth level
+            print(f"Teeth upgraded to level {self.teeth_level}!")
+
+    def attack(self):
+        for tree in trees:
+            if abs(self.x - tree.x) <= 1 and abs(self.y - tree.y) <= 1:
+                if tree.take_damage(self.attack_damage):
+                    trees.remove(tree)  # Remove tree if health <= 0
+                    print("Tree destroyed!")
+                break
 
     def draw(self):
         colors = [self.color] * 6
@@ -234,6 +265,10 @@ def handleKeypresses():
         chop_tree_near_bober(bobers[0])
     if keys[pygame.K_l]:
         bobers[0].upgrade_castle(castles[0])
+    if keys[pygame.K_k]:  # Upgrade teeth for bober 1
+        bobers[0].upgrade_teeth()
+    if keys[pygame.K_f]:  # Attack for bober 1
+        bobers[0].attack()
 
     if keys[pygame.K_a]:
         bobers[1].move(-1, 0)
@@ -247,6 +282,10 @@ def handleKeypresses():
         chop_tree_near_bober(bobers[1])
     if keys[pygame.K_q]:
         bobers[1].upgrade_castle(castles[1])
+    if keys[pygame.K_e]:  # Upgrade teeth for bober 2
+        bobers[1].upgrade_teeth()
+    if keys[pygame.K_r]:  # Attack for bober 2
+        bobers[1].attack()
 
 # Main game loop
 running = True
