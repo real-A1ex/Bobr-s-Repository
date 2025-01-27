@@ -1,13 +1,13 @@
-from finalbober.bober_helper import *
-import pygame
-from pygame.locals import *
+import glfw
+import random
+import numpy as np
 from OpenGL.GL import *
 from OpenGL.GLU import *
-import random
-pygame.init()
+from objects import *
+import glm
 
-WIDTH, HEIGHT = 1000, 1000
-
+# Constants
+WIDTH, HEIGHT = 1200, 1200
 
 WHITE = (1, 1, 1)
 BLACK = (0, 0, 0)
@@ -22,6 +22,7 @@ BLUE = (0, 0, 1)
 YELLOW = (1, 1, 0)
 CYAN = (0, 1, 1)
 MAGENTA = (1, 0, 1)
+BACKGROUND_COLOR = (66 / 255, 135 / 255, 245 / 255)  # Normalized RGB values
 
 running = True
 
@@ -106,11 +107,11 @@ class Tree:
     def take_damage(self, damage):
         self.health -= damage
         if self.health <= 0:
-            return True  
+            return True
         return False
 
     def draw(self):
-        colors = [BROWN, BROWN, BROWN, BROWN, GREEN, GREEN]
+        colors = [BROWN, BROWN, BROWN, BROWN, BROWN, BROWN]
         draw_cube(self.x, self.y, 0, 1, colors)
 
 class Item:
@@ -124,8 +125,9 @@ class Bober:
         self.speed = speed
         self.inventory = []
         self.color = color if color else RED
-        self.teeth_level = 1  # Start with level 1 teeth
-        self.attack_damage = 2  # Damage per attack
+        self.teeth_level = 1  
+        self.attack_damage = 2  
+        self.wood_amount = 0
 
     def move(self, dx, dy):
         new_x = self.x + dx * self.speed
@@ -142,27 +144,20 @@ class Bober:
 
     def pick_up(self, item):
         self.inventory.append(item)
+        self.wood_amount += 1
 
     def upgrade_castle(self, castle):
-        wood_count = sum(1 for item in self.inventory if item.name == 'wood')
-        if wood_count >= 2 and abs(self.x - castle.x) < 2 and abs(self.y - castle.y) < 2:
-            removed = 0
-            for item in self.inventory[:]:
-                if item.name == 'wood' and removed < 2:
-                    self.inventory.remove(item)
-                    removed += 1
+        price = castle.level * castle.level + 3
+
+        if self.wood_amount >= price and abs(self.x - castle.x) < 2 and abs(self.y - castle.y) < 2:
+            self.wood_amount -= price
             castle.improve()
 
     def upgrade_teeth(self):
-        wood_count = sum(1 for item in self.inventory if item.name == 'wood')
-        if wood_count >= 10:
-            # Remove 10 wood from inventory
-            removed = 0
-            for item in self.inventory[:]:
-                if item.name == 'wood' and removed < 10:
-                    self.inventory.remove(item)
-                    removed += 1
-            # Increase teeth level
+        price = self.teeth_level * self.teeth_level + 5
+        self.wood_amount = sum(1 for item in self.inventory if item.name == 'wood')
+        if self.wood_amount >= price:
+            self.wood_amount -= price
             self.teeth_level += 1
             self.attack_damage += 1  # Increase attack damage with teeth level
             print(f"Teeth upgraded to level {self.teeth_level}!")
@@ -184,9 +179,10 @@ class Castle:
         self.x = x
         self.y = y
         self.level = 1
+        self.health = 100
 
     def improve(self):
-        self.level += 1
+        self.level += 200
 
     def draw(self):
         colors = [LIGHT_GRAY] * 6 if self.level < 2 else [DARK_GRAY] * 6
@@ -201,7 +197,7 @@ castles = [Castle(2, 2), Castle(17, 17)]
 
 def init_gl():
     glEnable(GL_DEPTH_TEST)
-    glClearColor(WHITE[0], WHITE[1], WHITE[2], 1)
+    glClearColor(*BACKGROUND_COLOR, 1.0)  # Set background color here
     glMatrixMode(GL_PROJECTION)
     gluPerspective(45, (WIDTH / HEIGHT), 0.1, 50.0)
     glMatrixMode(GL_MODELVIEW)
@@ -211,6 +207,62 @@ def tick_tiles():
     for tile in sampled_tiles:
         if random.random() < 0.01:
             trees.append(Tree(tile.x, tile.y))
+
+def is_collision(x, y):
+    if x < 0 or y < 0 or x >= 19 or y >= 19:
+        return True
+    for tree in trees:
+        if abs(x - tree.x) < 0.9 and abs(y - tree.y) < 0.9:
+            return True
+    for castle in castles:
+        if abs(x - castle.x) < 1 and abs(y - castle.y) < 1:
+            return True
+    return False
+
+def chop_tree_near_bober(bober):
+    for tree in trees:
+        if abs(bober.x - tree.x) <= 1.1 and abs(bober.y - tree.y) <= 1.1:
+            bober.chop_tree(tree)
+            trees.remove(tree)
+            break
+
+def handleKeypresses(window):
+    global running
+    if glfw.get_key(window, glfw.KEY_LEFT) == glfw.PRESS:
+        bobers[0].move(-1, 0)
+    if glfw.get_key(window, glfw.KEY_RIGHT) == glfw.PRESS:
+        bobers[0].move(1, 0)
+    if glfw.get_key(window, glfw.KEY_UP) == glfw.PRESS:
+        bobers[0].move(0, 1)
+    if glfw.get_key(window, glfw.KEY_DOWN) == glfw.PRESS:
+        bobers[0].move(0, -1)
+    if glfw.get_key(window, glfw.KEY_SPACE) == glfw.PRESS:
+        chop_tree_near_bober(bobers[0])
+    if glfw.get_key(window, glfw.KEY_L) == glfw.PRESS:  # upgrade castle bob1
+        bobers[0].upgrade_castle(castles[0])
+    if glfw.get_key(window, glfw.KEY_K) == glfw.PRESS:  # upgrade teeth bob1
+        bobers[0].upgrade_teeth()
+    if glfw.get_key(window, glfw.KEY_F) == glfw.PRESS:  # attack bob1
+        bobers[0].attack()
+    if glfw.get_key(window, glfw.KEY_A) == glfw.PRESS:
+        bobers[1].move(-1, 0)
+    if glfw.get_key(window, glfw.KEY_D) == glfw.PRESS:
+        bobers[1].move(1, 0)
+    if glfw.get_key(window, glfw.KEY_W) == glfw.PRESS:
+        bobers[1].move(0, 1)
+    if glfw.get_key(window, glfw.KEY_S) == glfw.PRESS:
+        bobers[1].move(0, -1)
+    if glfw.get_key(window, glfw.KEY_LEFT_SHIFT) == glfw.PRESS:
+        chop_tree_near_bober(bobers[1])
+    if glfw.get_key(window, glfw.KEY_Q) == glfw.PRESS:  # bob2 castle upgrade
+        bobers[1].upgrade_castle(castles[1])
+    if glfw.get_key(window, glfw.KEY_E) == glfw.PRESS:  # upgrade teeth for bob2
+        bobers[1].upgrade_teeth()
+    if glfw.get_key(window, glfw.KEY_R) == glfw.PRESS:  # attack for bober2
+        bobers[1].attack()
+    if glfw.get_key(window, glfw.KEY_ESCAPE) == glfw.PRESS:
+        running = False
+        glfw.set_window_should_close(window, True)  # Mark the window for closing
 
 def draw_scene():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -227,78 +279,23 @@ def draw_scene():
     for castle in castles:
         castle.draw()
 
-    pygame.display.flip()
-
-def is_collision(x, y):
-    if x < 0 or y < 0 or x >= 20 or y >= 20:
-        return True
-    for tree in trees:
-        if abs(x - tree.x) < 1 and abs(y - tree.y) < 1:
-            return True
-    for castle in castles:
-        if abs(x - castle.x) < 1 and abs(y - castle.y) < 1:
-            return True
-    return False
-
-def chop_tree_near_bober(bober):
-    for tree in trees:
-        if abs(bober.x - tree.x) <= 2 and abs(bober.y - tree.y) <= 2:
-            bober.chop_tree(tree)
-            trees.remove(tree)
-            break
-
-def handleKeypresses():
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_LEFT]:
-        bobers[0].move(-1, 0)
-    if keys[pygame.K_RIGHT]:
-        bobers[0].move(1, 0)
-    if keys[pygame.K_UP]:
-        bobers[0].move(0, 1)
-    if keys[pygame.K_DOWN]:
-        bobers[0].move(0, -1)
-    if keys[pygame.K_SPACE]:
-        chop_tree_near_bober(bobers[0])
-    if keys[pygame.K_l]:
-        bobers[0].upgrade_castle(castles[0])
-    if keys[pygame.K_k]:  # Upgrade teeth for bober 1
-        bobers[0].upgrade_teeth()
-    if keys[pygame.K_f]:  # Attack for bober 1
-        bobers[0].attack()
-    if keys[pygame.K_a]:
-        bobers[1].move(-1, 0)
-    if keys[pygame.K_d]:
-        bobers[1].move(1, 0)
-    if keys[pygame.K_w]:
-        bobers[1].move(0, 1)
-    if keys[pygame.K_s]:
-        bobers[1].move(0, -1)
-    if keys[pygame.K_LSHIFT]:
-        chop_tree_near_bober(bobers[1])
-    if keys[pygame.K_q]:
-        bobers[1].upgrade_castle(castles[1])
-    if keys[pygame.K_e]:  # Upgrade teeth for bober 2
-        bobers[1].upgrade_teeth()
-    if keys[pygame.K_r]:  # Attack for bober 2
-        bobers[1].attack()
-    if keys[pygame.K_ESCAPE]:
-        running = False
-
 # Main game loop
+if not glfw.init():
+    raise Exception("Error")
 
-screen = pygame.display.set_mode((WIDTH, HEIGHT), DOUBLEBUF | OPENGL)
-pygame.display.set_caption("3D Bober World")
+window = glfw.create_window(WIDTH, HEIGHT, "3D Bober World", None, None)
+if not window:
+    glfw.terminate()
+    raise Exception("Failed to create GLFW window")
+
+glfw.make_context_current(window)
 init_gl()
-clock = pygame.time.Clock()
 
-while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-
-    handleKeypresses()
+while not glfw.window_should_close(window) and running:
+    handleKeypresses(window)
     tick_tiles()
     draw_scene()
-    clock.tick(30)
+    glfw.swap_buffers(window)
+    glfw.poll_events()
 
-pygame.quit()
+glfw.terminate() 
