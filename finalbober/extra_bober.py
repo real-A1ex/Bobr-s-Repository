@@ -3,7 +3,7 @@ import random
 import numpy as np
 from OpenGL.GL import *
 from OpenGL.GLU import *
-from objects import *
+from PIL import Image
 import glm
 
 # Constants
@@ -23,6 +23,24 @@ YELLOW = (1, 1, 0)
 CYAN = (0, 1, 1)
 MAGENTA = (1, 0, 1)
 BACKGROUND_COLOR = (66 / 255, 135 / 255, 245 / 255)  # Normalized RGB values
+
+def load_texture(image_path):
+    img = Image.open(image_path)
+    img = img.transpose(Image.FLIP_TOP_BOTTOM)  
+    img_data = img.convert("RGBA").tobytes() 
+    texture_id = glGenTextures(1)
+    glBindTexture(GL_TEXTURE_2D, texture_id)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.width, img.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, img_data)
+
+    glBindTexture(GL_TEXTURE_2D, 0)
+
+    return texture_id
+
 
 running = True
 
@@ -77,22 +95,35 @@ def draw_cube(x, y, z, size, colors):
     glPopMatrix()
 
 class Tile:
-    def __init__(self, x, y, height):
+    def __init__(self, x, y, height, texture_id):
         self.x = x
         self.y = y
         self.height = height
+        self.texture_id = texture_id
 
     def draw(self):
-        glColor3fv(LIGHT_GREEN)
+        glEnable(GL_TEXTURE_2D)  # Enable texturing
+        glBindTexture(GL_TEXTURE_2D, self.texture_id)  # Bind the texture
+
         glPushMatrix()
         glTranslatef(self.x, self.y, 0)
         glBegin(GL_QUADS)
+
+        # Define texture coordinates and vertices for the tile
+        glTexCoord2f(0, 0)
         glVertex3f(0, 0, -1)
+        glTexCoord2f(1, 0)
         glVertex3f(1, 0, -1)
+        glTexCoord2f(1, 1)
         glVertex3f(1, 1, -1)
+        glTexCoord2f(0, 1)
         glVertex3f(0, 1, -1)
+
         glEnd()
         glPopMatrix()
+
+        glBindTexture(GL_TEXTURE_2D, 0)  # Unbind the texture
+        glDisable(GL_TEXTURE_2D)  # Disable texturing
 
 class Tree:
     def __init__(self, x, y):
@@ -189,15 +220,15 @@ class Castle:
         for lvl in range(self.level):
             draw_cube(self.x, self.y, lvl, 1, colors)
 
-# Create world
-tiles = [[Tile(x, y, random.randint(1, 5)) for x in range(20)] for y in range(20)]
+
 trees = [Tree(random.randint(0, 19), random.randint(0, 19)) for _ in range(20)]
 bobers = [Bober(1, 1, color=CYAN), Bober(10, 10, color=MAGENTA)]
 castles = [Castle(2, 2), Castle(17, 17)]
 
 def init_gl():
     glEnable(GL_DEPTH_TEST)
-    glClearColor(*BACKGROUND_COLOR, 1.0)  # Set background color here
+    glEnable(GL_TEXTURE_2D) 
+    glClearColor(*BACKGROUND_COLOR, 1.0)
     glMatrixMode(GL_PROJECTION)
     gluPerspective(45, (WIDTH / HEIGHT), 0.1, 50.0)
     glMatrixMode(GL_MODELVIEW)
@@ -262,7 +293,7 @@ def handleKeypresses(window):
         bobers[1].attack()
     if glfw.get_key(window, glfw.KEY_ESCAPE) == glfw.PRESS:
         running = False
-        glfw.set_window_should_close(window, True)  # Mark the window for closing
+        glfw.set_window_should_close(window, True)
 
 def draw_scene():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -290,6 +321,10 @@ if not window:
 
 glfw.make_context_current(window)
 init_gl()
+
+texture_id = load_texture("finalbober\\grass.png")
+tiles = [[Tile(x, y, random.randint(1, 5), texture_id) for x in range(20)] for y in range(20)]
+
 
 while not glfw.window_should_close(window) and running:
     handleKeypresses(window)
