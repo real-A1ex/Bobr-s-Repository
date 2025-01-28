@@ -323,57 +323,8 @@ if not window:
 glfw.make_context_current(window)
 init_gl()
 
-font = freetype.Font("path/to/your/font.ttf")
-font.size = 24
-font.antialiased = True
-
-
 texture_id = load_texture("finalbober\\grass.png")
 tiles = [[Tile(x, y, random.randint(1, 5), texture_id) for x in range(20)] for y in range(20)]
-def draw_text(x, y, text, font):
-    glColor3f(0, 0, 0)
-    glRasterPos2f(x, y)
-    for char in text:
-        font.draw_char(char)
-
-def draw_wood_counters():
-    wood_count_bober1 = bobers[0].wood_amount
-    wood_count_bober2 = bobers[1].wood_amount
-
-    glMatrixMode(GL_PROJECTION)
-    glPushMatrix()
-    glLoadIdentity()
-    gluOrtho2D(0, WIDTH, 0, HEIGHT)
-    glMatrixMode(GL_MODELVIEW)
-    glPushMatrix()
-    glLoadIdentity()
-
-    draw_text(10, HEIGHT - 30, f"Bober 1 Wood: {wood_count_bober1}", font)
-    draw_text(10, HEIGHT - 60, f"Bober 2 Wood: {wood_count_bober2}", font)
-
-    glPopMatrix()
-    glMatrixMode(GL_PROJECTION)
-    glPopMatrix()
-    glMatrixMode(GL_MODELVIEW)
-
-def draw_status_bar():
-    glMatrixMode(GL_PROJECTION)
-    glPushMatrix()
-    glLoadIdentity()
-    gluOrtho2D(0, WIDTH, 0, HEIGHT)
-    glMatrixMode(GL_MODELVIEW)
-    glPushMatrix()
-    glLoadIdentity()
-
-    # Draw wood and health points for each castle
-    for i, castle in enumerate(castles):
-        draw_text(10, HEIGHT - 90 - i * 30, f"Castle {i+1} Health: {castle.health}", font)
-        draw_text(10, HEIGHT - 120 - i * 30, f"Castle {i+1} Level: {castle.level}", font)
-
-    glPopMatrix()
-    glMatrixMode(GL_PROJECTION)
-    glPopMatrix()
-    glMatrixMode(GL_MODELVIEW)
 
 
 while not glfw.window_should_close(window) and running:
@@ -386,7 +337,6 @@ while not glfw.window_should_close(window) and running:
     handleKeypresses(window)
     tick_tiles()
     draw_scene()
-    draw_status_bar()
     glfw.swap_buffers(window)
     glfw.poll_events()
 
