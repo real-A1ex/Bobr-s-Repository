@@ -157,7 +157,7 @@ class Bober:
         self.inventory = []
         self.color = color if color else RED
         self.teeth_level = 1  
-        self.attack_damage = 2  
+        self.attack_damage = 1  
         self.wood_amount = 0
 
     def move(self, dx, dy):
@@ -169,9 +169,8 @@ class Bober:
             self.y = new_y
 
     def chop_tree(self, tree):
-        if tree.age >= 10:
-            item = tree.fell()
-            self.pick_up(item)
+        item = tree.fell()
+        self.pick_up(item)
 
     def pick_up(self, item):
         self.inventory.append(item)
@@ -190,16 +189,18 @@ class Bober:
         if self.wood_amount >= price:
             self.wood_amount -= price
             self.teeth_level += 1
-            self.attack_damage += 1  # Increase attack damage with teeth level
+            self.attack_damage += 1 
             print(f"Teeth upgraded to level {self.teeth_level}!")
 
     def attack(self):
         for tree in trees:
             if abs(self.x - tree.x) <= 1 and abs(self.y - tree.y) <= 1:
                 if tree.take_damage(self.attack_damage):
-                    trees.remove(tree)  # Remove tree if health <= 0
-                    print("Tree destroyed!")
+                    trees.remove(tree) 
                 break
+        for castle in castles:
+            if abs(self.x - castle.x) <= 1.1 and abs(self.y - castle.y) <= 1.1:
+                castle.health -= self.attack_damage
 
     def draw(self):
         colors = [self.color] * 6
@@ -210,15 +211,15 @@ class Castle:
         self.x = x
         self.y = y
         self.level = 1
-        self.health = 100
+        self.health = 300
 
     def improve(self):
-        self.level += 200
+        self.health += 500
+        self.level += 1
 
     def draw(self):
-        colors = [LIGHT_GRAY] * 6 if self.level < 2 else [DARK_GRAY] * 6
-        for lvl in range(self.level):
-            draw_cube(self.x, self.y, lvl, 1, colors)
+        colors = [LIGHT_GRAY] * 6
+        draw_cube(self.x, self.y, 0, 1, colors)
 
 
 trees = [Tree(random.randint(0, 19), random.randint(0, 19)) for _ in range(20)]
@@ -327,6 +328,12 @@ tiles = [[Tile(x, y, random.randint(1, 5), texture_id) for x in range(20)] for y
 
 
 while not glfw.window_should_close(window) and running:
+    if(castles[0].health < 0):
+        running = False
+        print("Spieler 2 gewinnt")
+    if(castles[1].health < 0):
+        running = False
+        print("Spieler 1 gewinnt")
     handleKeypresses(window)
     tick_tiles()
     draw_scene()
