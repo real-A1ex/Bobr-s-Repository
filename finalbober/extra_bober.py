@@ -6,7 +6,6 @@ from OpenGL.GLU import *
 from PIL import Image
 import glm
 
-# Constants
 WIDTH, HEIGHT = 1200, 1200
 
 WHITE = (1, 1, 1)
@@ -22,7 +21,7 @@ BLUE = (0, 0, 1)
 YELLOW = (1, 1, 0)
 CYAN = (0, 1, 1)
 MAGENTA = (1, 0, 1)
-BACKGROUND_COLOR = (66 / 255, 135 / 255, 245 / 255)  # Normalized RGB values
+BACKGROUND_COLOR = (66 / 255, 135 / 255, 245 / 255) 
 
 def load_texture(image_path):
     img = Image.open(image_path)
@@ -49,42 +48,36 @@ def draw_cube(x, y, z, size, colors, scale_h):
     glTranslatef(x, y, z)
     glBegin(GL_QUADS)
 
-    # Front face
     glColor3fv(colors[0])
     glVertex3f(0, 0, size * (scale_h - 1))
     glVertex3f(size, 0, size * (scale_h - 1))
     glVertex3f(size, size, size * (scale_h - 1))
     glVertex3f(0, size, size * (scale_h - 1))
 
-    # Back face
     glColor3fv(colors[1])
     glVertex3f(0, 0, -size)
     glVertex3f(size, 0, -size)
     glVertex3f(size, size, -size)
     glVertex3f(0, size, -size)
 
-    # Left face
     glColor3fv(colors[2])
     glVertex3f(0, 0, size * (scale_h - 1))
     glVertex3f(0, size, size * (scale_h - 1))
     glVertex3f(0, size, -size)
     glVertex3f(0, 0, -size)
 
-    # Right face
     glColor3fv(colors[3])
     glVertex3f(size, 0, size * (scale_h - 1))
     glVertex3f(size, size, size * (scale_h - 1))
     glVertex3f(size, size, -size)
     glVertex3f(size, 0, -size)
 
-    # Top face
     glColor3fv(colors[4])
     glVertex3f(0, size, size * (scale_h - 1))
     glVertex3f(size, size, size * (scale_h - 1))
     glVertex3f(size, size, -size)
     glVertex3f(0, size, -size)
 
-    # Bottom face
     glColor3fv(colors[5])
     glVertex3f(0, 0, size * (scale_h - 1))
     glVertex3f(size, 0, size * (scale_h - 1))
@@ -102,14 +95,14 @@ class Tile:
         self.texture_id = texture_id
 
     def draw(self):
-        glEnable(GL_TEXTURE_2D)  # Enable texturing
-        glBindTexture(GL_TEXTURE_2D, self.texture_id)  # Bind the texture
+        glEnable(GL_TEXTURE_2D) 
+        glBindTexture(GL_TEXTURE_2D, self.texture_id) 
 
         glPushMatrix()
         glTranslatef(self.x, self.y, 0)
         glBegin(GL_QUADS)
 
-        # Define texture coordinates and vertices for the tile
+        
         glTexCoord2f(0, 0)
         glVertex3f(0, 0, -1)
         glTexCoord2f(1, 0)
@@ -122,15 +115,15 @@ class Tile:
         glEnd()
         glPopMatrix()
 
-        glBindTexture(GL_TEXTURE_2D, 0)  # Unbind the texture
-        glDisable(GL_TEXTURE_2D)  # Disable texturing
+        glBindTexture(GL_TEXTURE_2D, 0) 
+        glDisable(GL_TEXTURE_2D)  
 
 class Tree:
     def __init__(self, x, y):
         self.x = x
         self.y = y
         self.age = random.randint(5, 10)
-        self.health = 100  # Trees now have health
+        self.health = 100  
 
     def fell(self):
         return Item('wood')
@@ -176,16 +169,15 @@ class Bober:
         self.inventory.append(item)
         self.wood_amount += 1
 
-    def upgrade_castle(self, castle):
-        price = castle.level * castle.level + 3
-
-        if self.wood_amount >= price and abs(self.x - castle.x) < 2 and abs(self.y - castle.y) < 2:
+    def upgrade_castle(self, castle_id):
+        price = castle_id.level * castle_id.level + 3
+        print(price)
+        if self.wood_amount >= price and abs(self.x - castle_id.x) < 2 and abs(self.y - castle_id.y) < 2:
             self.wood_amount -= price
-            castle.improve()
+            castle_id.improve()
 
     def upgrade_teeth(self):
         price = self.teeth_level * self.teeth_level + 5
-        self.wood_amount = sum(1 for item in self.inventory if item.name == 'wood')
         if self.wood_amount >= price:
             self.wood_amount -= price
             self.teeth_level += 1
@@ -288,6 +280,7 @@ def handleKeypresses(window):
         chop_tree_near_bober(bobers[1])
     if glfw.get_key(window, glfw.KEY_Q) == glfw.PRESS:  # bob2 castle upgrade
         bobers[1].upgrade_castle(castles[1])
+        print("debug")
     if glfw.get_key(window, glfw.KEY_E) == glfw.PRESS:  # upgrade teeth for bob2
         bobers[1].upgrade_teeth()
     if glfw.get_key(window, glfw.KEY_R) == glfw.PRESS:  # attack for bober2
