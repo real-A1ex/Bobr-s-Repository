@@ -44,17 +44,17 @@ def load_texture(image_path):
 
 running = True
 
-def draw_cube(x, y, z, size, colors):
+def draw_cube(x, y, z, size, colors, scale_h):
     glPushMatrix()
     glTranslatef(x, y, z)
     glBegin(GL_QUADS)
 
     # Front face
     glColor3fv(colors[0])
-    glVertex3f(0, 0, 0)
-    glVertex3f(size, 0, 0)
-    glVertex3f(size, size, 0)
-    glVertex3f(0, size, 0)
+    glVertex3f(0, 0, size * (scale_h - 1))
+    glVertex3f(size, 0, size * (scale_h - 1))
+    glVertex3f(size, size, size * (scale_h - 1))
+    glVertex3f(0, size, size * (scale_h - 1))
 
     # Back face
     glColor3fv(colors[1])
@@ -65,30 +65,30 @@ def draw_cube(x, y, z, size, colors):
 
     # Left face
     glColor3fv(colors[2])
-    glVertex3f(0, 0, 0)
-    glVertex3f(0, size, 0)
+    glVertex3f(0, 0, size * (scale_h - 1))
+    glVertex3f(0, size, size * (scale_h - 1))
     glVertex3f(0, size, -size)
     glVertex3f(0, 0, -size)
 
     # Right face
     glColor3fv(colors[3])
-    glVertex3f(size, 0, 0)
-    glVertex3f(size, size, 0)
+    glVertex3f(size, 0, size * (scale_h - 1))
+    glVertex3f(size, size, size * (scale_h - 1))
     glVertex3f(size, size, -size)
     glVertex3f(size, 0, -size)
 
     # Top face
     glColor3fv(colors[4])
-    glVertex3f(0, size, 0)
-    glVertex3f(size, size, 0)
+    glVertex3f(0, size, size * (scale_h - 1))
+    glVertex3f(size, size, size * (scale_h - 1))
     glVertex3f(size, size, -size)
     glVertex3f(0, size, -size)
 
     # Bottom face
     glColor3fv(colors[5])
-    glVertex3f(0, 0, 0)
-    glVertex3f(size, 0, 0)
-    glVertex3f(size, 0, -size)
+    glVertex3f(0, 0, size * (scale_h - 1))
+    glVertex3f(size, 0, size * (scale_h - 1))
+    glVertex3f(size, 0, -size )
     glVertex3f(0, 0, -size)
 
     glEnd()
@@ -143,7 +143,7 @@ class Tree:
 
     def draw(self):
         colors = [BROWN, BROWN, BROWN, BROWN, BROWN, BROWN]
-        draw_cube(self.x, self.y, 0, 1, colors)
+        draw_cube(self.x, self.y, 0, 1, colors,1)
 
 class Item:
     def __init__(self, name):
@@ -204,7 +204,7 @@ class Bober:
 
     def draw(self):
         colors = [self.color] * 6
-        draw_cube(self.x, self.y, 0, 1, colors)
+        draw_cube(self.x, self.y, 0, 1, colors, self.teeth_level)
 
 class Castle:
     def __init__(self, x, y):
@@ -219,7 +219,7 @@ class Castle:
 
     def draw(self):
         colors = [LIGHT_GRAY] * 6
-        draw_cube(self.x, self.y, 0, 1, colors)
+        draw_cube(self.x, self.y, 0, 1, colors, self.level)
 
 
 trees = [Tree(random.randint(0, 19), random.randint(0, 19)) for _ in range(20)]
